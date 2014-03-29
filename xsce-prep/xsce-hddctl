@@ -1,0 +1,47 @@
+#!/bin/bash
+# xsce-hddctl - enable or disable mounting of hdd with label RootOverlay
+
+ROOTFS=`blkid |grep RootOverlay|awk '{split($0,a,"\""); print a[2]}'`
+
+mkdir -p /mnt/extdrv
+mkdir -p /mnt/mmc
+
+mount /dev/mmcblk0p3 /mnt/mmc
+
+if  [ "$ROOTFS" == "RootOverlay" ] ; then
+  mount -L RootOverlay /mnt/extdrv
+fi 
+case "$1" in
+  enable)              
+        if [ "$ROOTFS" != "RootOverlay" ] ; then
+          echo "External HDD with RootOverlay not found."
+          echo "You can either attach a prepared drive or run xsce-prepdisk to format one."
+          exit 1   
+        fi
+        cp /root/xsce-prep/fstab.ORIG /mnt/mmc/etc/fstab
+        cat /root/xsce-prep/fstab.in >> /mnt/mmc/etc/fstab
+        cp /mnt/mmc/etc/fstab /mnt/extdrv/etc/fstab
+        cp -f /root/xsce-prep/extmnt /mnt/mmc/etc/rc.d/init.d
+        cp -f /root/xsce-prep/extmnt /mnt/extdrv/etc/rc.d/init.d
+        echo "Rebooting"
+        reboot
+        ;;
+
+  disable)
+        if [ "$ROOTFS" == "RootOverlay" ] ; then
+          cp /root/xsce-prep/fstab.ORIG /mnt/extdrv/etc/fstab
+          rm -f /mnt/extdrv/etc/rc.d/init.d/extmnt   
+        fi             
+        cp /root/xsce-prep/fstab.ORIG /mnt/mmc/etc/fstab
+        rm -f /mnt/mmc/etc/rc.d/init.d/extmnt
+        echo "Rebooting"
+        reboot
+        ;;
+
+  *)
+        echo $"Usage: $0 {enable|disable}"
+        exit 1
+esac
+
+exit 0
+

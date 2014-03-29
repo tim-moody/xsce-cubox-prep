@@ -1,0 +1,14 @@
+# Start of lines added for external drive
+LABEL=RootOverlay /mnt/extdrv ext4 defaults,nofail 0 0
+/mnt/extdrv/etc /etc none bind,nofail 0 0
+/mnt/extdrv/opt /opt none bind,nofail,nobootwait 0 0
+/mnt/extdrv/srv /srv none bind,nofail,nobootwait 0 0
+/mnt/extdrv/var /var none bind,nofail,nobootwait 0 0
+/mnt/extdrv/library /library none bind,nofail,nobootwait 0 0
+# These never worked. They can be bind mounted manually only.
+# So we bind them in /etc/rc.d/init.d/extmnt
+#/mnt/extdrv/tmp /tmp none bind,nofail,nobootwait 0 0
+#/mnt/extdrv/usr /usr none bind,nofail,nobootwait 0 0
+LABEL=ExtSwap none swap sw,pri=3,nofail,nobootwait 0 0
+# End of lines added for external drive
+

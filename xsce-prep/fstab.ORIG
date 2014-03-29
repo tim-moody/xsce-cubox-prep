@@ -1,0 +1,3 @@
+UUID=7ee85ed8-de4a-4779-8658-2daed0d35e97  / ext4    defaults,noatime 0 0
+UUID=8b227b31-d2a9-4364-9b92-6ccd926c7441  /boot ext3    defaults,noatime 0 0
+UUID=4efaa2c3-00a3-4c19-bbb2-8723c98a9c2c  swap swap    defaults,noatime 0 0

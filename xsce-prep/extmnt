@@ -1,0 +1,64 @@
+#!/bin/bash
+#
+# chkconfig: 345 29 73
+# description: mount/unmount my custom bind mounts onto external hdd
+#
+#
+### BEGIN INIT INFO
+# Provides:
+### END INIT INFO
+
+. /etc/init.d/functions
+
+ROOTFS=`blkid |grep RootOverlay|awk '{split($0,a,"\""); print a[2]}'`
+ROOTOVL=`grep LABEL=RootOverlay /etc/fstab|awk '{split($0,a," "); print a[1]}'`
+
+# Don't do the mounts if the external drive labelled RootOverlay is not present
+# And if it is not, reset fstab and reboot; otherwise networking fails
+# If it is present and fstab does not have RootOverlay, fix up fstab and reboot
+
+if  [ "$ROOTFS" != "RootOverlay" ] ; then
+  echo "No RootOverlay drive attached"
+  if [ "$ROOTOVL" == "LABEL=RootOverlay" ] ; then
+    echo "Resetting fstab"
+    cp /root/xsce-prep/fstab.ORIG /etc/fstab
+    reboot
+  fi
+  exit 1
+elif [ "$ROOTOVL" != "LABEL=RootOverlay" ] ; then
+  cat /root/xsce-prep/fstab.in >> /etc/fstab
+  reboot
+fi 
+
+case "$1" in
+  start)
+        # Other mounts are done in fstab
+        # These don't work there
+
+        /bin/mount --bind /mnt/extdrv/usr /usr
+        /bin/mount --bind /mnt/extdrv/tmp /tmp
+        ;;
+
+  stop)
+        /bin/umount /usr
+        /bin/umount /tmp
+        ;;
+
+  status)
+        ;;
+
+  restart)
+        $0 stop
+        $0 start
+        ;;
+
+  reload)
+        $0 start
+        ;;
+  *)
+        echo $"Usage: $0 {start|stop|restart|reload|status}"
+        exit 1
+esac
+
+exit 0
+

@@ -1,0 +1,126 @@
+# Assume esata drive is sda 
+#  - must be attached at boot with no other usbs attached
+
+EXTHDD=`blkid | grep /dev/sda | wc | awk '{print $1}'`
+if [ $EXTHDD = 0 ];then
+    echo "No external hard drive found on sda."
+    echo "Please attach the drive and rerun."
+    exit 1
+fi
+
+# Display devices
+blkid
+ls -lav /dev/sd*
+
+# Warning
+echo "******************************************************"
+echo "WARNING!!! ALL PARTITIONS ON /DEV/SDA WILL BE WIPED!!!"
+echo "******************************************************"
+read -p "Enter Yes (exactly) to continue: "
+if [[ $REPLY != "Yes" ]]
+then
+    echo "'Yes' was not entered so Exiting"
+    exit 1
+fi
+
+# umount just in case
+umount /mnt/extdrv
+
+# Make 3 partitions:
+#  - reserverve 250M for boot (not currently used)
+#  - 2 G for swap
+#  - remainder for rootfs
+# Assume drive has no more than 10 existing partitions
+# Delete them
+fdisk /dev/sda <<EOF
+d
+
+d
+
+d
+
+d
+
+d
+
+d
+
+d
+
+d
+
+d
+
+d
+
+p
+w
+EOF
+
+# Now create new partitions
+fdisk /dev/sda <<EOF
+n
+1
+
++250M
+n
+2
+
++2G
+t
+2
+15
+n
+3
+
+
+
+w
+EOF
+# Reread partition table
+partprobe /dev/sda
+
+# Put file systems on partitions 1, swap on 2, and Root Overlay on 3
+echo "Creating file systems"
+
+mkfs.ext3 /dev/sda1 -L BootReserved
+mkswap /dev/sda2 -L ExtSwap
+mkfs.ext4 /dev/sda3 -L RootOverlay
+
+# Format and resize partition 3
+e2fsck -f /dev/sda3
+# resize2fs /dev/sda3 now not necessary
+
+# Copy root filesystem to partition 3
+echo "Copying root filesystem to /dev/sda3."
+echo "This and resizing will take around 10 minutes."
+
+xzcat rootfs.img.xz >/dev/sda3
+e2label /dev/sda3 RootOverlay
+UUID=`uuidgen`
+echo "UUID is $UUID"
+tune2fs /dev/sda3 -U $UUID
+
+e2fsck -f /dev/sda3
+resize2fs /dev/sda3
+
+# Create some xsce directories and mount
+
+mkdir -p /mnt/extdrv
+mkdir -p /mnt/mmc
+
+mount /dev/sda3 /mnt/extdrv
+mkdir -p /library
+
+# Add external directories to fstab
+# And put fstab on both internal and external directories
+
+echo "Modifying fstab"
+cat fstab.in >> /etc/fstab
+cp -u /etc/fstab /mnt/extdrv/etc/fstab
+cp -u extmnt /etc/rc.d/init.d
+cp -u extmnt /mnt/extdrv/etc/rc.d/init.d 
+
+echo "******************************************************"
+echo "Ready to reboot"
+
