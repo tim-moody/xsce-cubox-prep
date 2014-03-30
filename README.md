@@ -15,6 +15,8 @@ fstab.ORIG    - the original fstab
 
 extmnt        - is copied to /etc/rc.d/init.d to do some mounts that
                 don't work in fstab and some housekeeping
+              - reverts to the original fstab if the hdd is not attached
+                because otherwise networking and other things break.
                 
 xsce-hddctl   - a utility to enable and disable access to the external hdd
 
