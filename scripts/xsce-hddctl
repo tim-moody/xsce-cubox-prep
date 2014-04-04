@@ -2,6 +2,7 @@
 # xsce-hddctl - enable or disable mounting of hdd with label RootOverlay
 
 ROOTFS=`blkid |grep RootOverlay|awk '{split($0,a,"\""); print a[2]}'`
+ROOTOVL=`grep LABEL=RootOverlay /etc/fstab|awk '{split($0,a," "); print a[1]}'`
 
 mkdir -p /mnt/extdrv
 mkdir -p /mnt/mmc
@@ -18,22 +19,27 @@ case "$1" in
           echo "You can either attach a prepared drive or run xsce-prepdisk to format one."
           exit 1   
         fi
-        cp /root/xsce-prep/fstab.ORIG /mnt/mmc/etc/fstab
-        cat /root/xsce-prep/fstab.in >> /mnt/mmc/etc/fstab
-        cp /mnt/mmc/etc/fstab /mnt/extdrv/etc/fstab
-        cp -f /root/xsce-prep/extmnt /mnt/mmc/etc/rc.d/init.d
-        cp -f /root/xsce-prep/extmnt /mnt/extdrv/etc/rc.d/init.d
+        if [ "$ROOTOVL" == "LABEL=RootOverlay" ] ; then
+          echo "Looks to be enabled already."
+          echo "Exiting."
+          exit 1   
+        fi
+        cp /mnt/mmc/etc/fstab.ORIG /mnt/mmc/etc/fstab
+        cat /mnt/mmc/etc/fstab.hddmnt >> /mnt/mmc/etc/fstab
+        cp /mnt/mmc/etc/fstab.* /mnt/extdrv/etc       
+        cp -f 010-xsce-extmnt /mnt/mmc/etc/rc.d/init.d
+        cp -f 010-xsce-extmnt /mnt/extdrv/etc/rc.d/init.d
         echo "Rebooting"
         reboot
         ;;
 
   disable)
         if [ "$ROOTFS" == "RootOverlay" ] ; then
-          cp /root/xsce-prep/fstab.ORIG /mnt/extdrv/etc/fstab
-          rm -f /mnt/extdrv/etc/rc.d/init.d/extmnt   
+          cp /mnt/mmc/fstab.ORIG /mnt/extdrv/etc/fstab
+          rm -f /mnt/extdrv/etc/rc.d/init.d/010-xsce-extmnt   
         fi             
-        cp /root/xsce-prep/fstab.ORIG /mnt/mmc/etc/fstab
-        rm -f /mnt/mmc/etc/rc.d/init.d/extmnt
+        cp /mnt/mmc/etc/fstab.ORIG /mnt/mmc/etc/fstab
+        rm -f /mnt/mmc/etc/rc.d/init.d/010-xsce-extmnt
         echo "Rebooting"
         reboot
         ;;
