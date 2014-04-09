@@ -85,10 +85,10 @@ echo "Creating file systems"
 
 mkfs.ext3 /dev/sda1 -L BootReserved
 mkswap /dev/sda2 -L ExtSwap
-mkfs.ext4 /dev/sda3 -L RootOverlay
+# mkfs.ext4 /dev/sda3 -L XSCE-RootOverlay
 
 # Format and resize partition 3
-e2fsck -f /dev/sda3
+# e2fsck -f /dev/sda3
 # resize2fs /dev/sda3 now not necessary
 
 # Copy root filesystem to partition 3
@@ -96,7 +96,7 @@ echo "Copying root filesystem to /dev/sda3."
 echo "This and resizing will take around 10 minutes."
 
 xzcat images/rootfs.img.xz >/dev/sda3
-e2label /dev/sda3 RootOverlay
+e2label /dev/sda3 XSCE-RootOverlay
 UUID=`uuidgen`
 echo "UUID is $UUID"
 tune2fs /dev/sda3 -U $UUID

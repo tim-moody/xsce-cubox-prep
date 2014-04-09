@@ -1,25 +1,25 @@
 #!/bin/bash
 # xsce-hddctl - enable or disable mounting of hdd with label RootOverlay
 
-ROOTFS=`blkid |grep RootOverlay|awk '{split($0,a,"\""); print a[2]}'`
-ROOTOVL=`grep LABEL=RootOverlay /etc/fstab|awk '{split($0,a," "); print a[1]}'`
+ROOTFS=`blkid |grep XSCE-RootOverlay|awk '{split($0,a,"\""); print a[2]}'`
+ROOTOVL=`grep LABEL=XSCE-RootOverlay /etc/fstab|awk '{split($0,a," "); print a[1]}'`
 
 mkdir -p /mnt/extdrv
 mkdir -p /mnt/mmc
 
 mount /dev/mmcblk0p3 /mnt/mmc
 
-if  [ "$ROOTFS" == "RootOverlay" ] ; then
-  mount -L RootOverlay /mnt/extdrv
+if  [ "$ROOTFS" == "XSCE-RootOverlay" ] ; then
+  mount -L XSCE-RootOverlay /mnt/extdrv
 fi 
 case "$1" in
   enable)              
-        if [ "$ROOTFS" != "RootOverlay" ] ; then
-          echo "External HDD with RootOverlay not found."
+        if [ "$ROOTFS" != "XSCE-RootOverlay" ] ; then
+          echo "External HDD with XSCE-RootOverlay not found."
           echo "You can either attach a prepared drive or run xsce-prepdisk to format one."
           exit 1   
         fi
-        if [ "$ROOTOVL" == "LABEL=RootOverlay" ] ; then
+        if [ "$ROOTOVL" == "LABEL=XSCE-RootOverlay" ] ; then
           echo "Looks to be enabled already."
           echo "Exiting."
           exit 1   
@@ -34,7 +34,7 @@ case "$1" in
         ;;
 
   disable)
-        if [ "$ROOTFS" == "RootOverlay" ] ; then
+        if [ "$ROOTFS" == "XSCE-RootOverlay" ] ; then
           cp /mnt/mmc/fstab.ORIG /mnt/extdrv/etc/fstab
           rm -f /mnt/extdrv/etc/rc.d/init.d/010-xsce-extmnt   
         fi             
