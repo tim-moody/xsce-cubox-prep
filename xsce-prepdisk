@@ -8,11 +8,18 @@ if [ $EXTHDD = 0 ];then
     exit 1
 fi
 
+# Create some xsce directories and mount mmc
+
+mkdir -p /mnt/extdrv
+mkdir -p /mnt/mmc
+mount /dev/mmcblk0p3 /mnt/mmc
+ROOTOVL=`grep LABEL=XSCE-RootOverlay /mnt/mmc/etc/fstab|awk '{split($0,a," "); print a[1]}'`
+
 # Display devices
 blkid
 ls -lav /dev/sd*
 
-# Warning
+# Warning - wipe disk
 echo "******************************************************"
 echo "WARNING!!! ALL PARTITIONS ON /DEV/SDA WILL BE WIPED!!!"
 echo "******************************************************"
@@ -21,6 +28,25 @@ if [[ $REPLY != "Yes" ]]
 then
     echo "'Yes' was not entered so Exiting"
     exit 1
+fi
+
+# Warning - previously run
+if [ "$ROOTOVL" == "LABEL=XSCE-RootOverlay" ] ; then
+  echo "******************************************************"
+  echo "WARNING!!! xsce-prepdisk previously run!!!"
+  echo "******************************************************"
+  read -p "Enter Yes (exactly) to uninstall before continuing: "
+  if [[ $REPLY != "Yes" ]]
+  then
+    echo "'Yes' was not entered so Exiting"
+    exit 1
+  fi
+# Reset fstab to original  
+  cp /mnt/mmc/etc/fstab.ORIG /mnt/mmc/etc/fstab
+  
+else
+  cp /mnt/mmc/etc/fstab /mnt/mmc/etc/fstab.ORIG
+  cp /mnt/mmc/etc/fstab.ORIG scripts
 fi
 
 # umount just in case
@@ -106,9 +132,6 @@ resize2fs /dev/sda3
 
 # Create some xsce directories and mount
 
-mkdir -p /mnt/extdrv
-mkdir -p /mnt/mmc
-
 mount /dev/sda3 /mnt/extdrv
 mkdir -p /library
 
@@ -116,16 +139,14 @@ mkdir -p /library
 # And put fstab on both internal and external directories
 
 echo "Modifying fstab"
-cp /etc/fstab /etc/fstab.ORIG
-cp /etc/fstab.ORIG scripts
-cat scripts/fstab.hddmnt >> /etc/fstab
-cp scripts/fstab.hddmnt /etc
-cp -u /etc/fstab.ORIG /mnt/extdrv/etc/fstab.ORIG
-cp  scripts/fstab.hddmnt /mnt/extdrv/etc/fstab.hddmnt
-cp -u /etc/fstab /mnt/extdrv/etc/fstab
 
-cp -u scripts/010-xsce-extmnt /etc/rc.d/init.d
-cp -u scripts/010-xsce-extmnt /mnt/extdrv/etc/rc.d/init.d 
+cat scripts/fstab.hddmnt >> /mnt/mmc/etc/fstab
+cp scripts/fstab.hddmnt /mnt/mmc/etc
+
+cp /mnt/mmc/etc/fstab* /mnt/extdrv/etc
+
+cp scripts/010-xsce-extmnt /mnt/mmc/etc/rc.d/init.d
+cp scripts/010-xsce-extmnt /mnt/extdrv/etc/rc.d/init.d 
 
 echo "******************************************************"
 echo "Ready to reboot"

@@ -18,14 +18,15 @@ ROOTOVL=`grep LABEL=XSCE-RootOverlay /etc/fstab|awk '{split($0,a," "); print a[1
 # If it is present and fstab does not have XSCE-RootOverlay, fix up fstab and reboot
 
 if  [ "$ROOTFS" != "XSCE-RootOverlay" ] ; then
-  echo "No XSCE-RootOverlay drive attached"
+  logger "$0 - No XSCE-RootOverlay drive attached"
   if [ "$ROOTOVL" == "LABEL=XSCE-RootOverlay" ] ; then
-    echo "Resetting fstab"
+    logger "$0 - Resetting fstab to original"
     cp /etc/fstab.ORIG /etc/fstab
     reboot
   fi
   exit 1
 elif [ "$ROOTOVL" != "LABEL=XSCE-RootOverlay" ] ; then
+  logger "$0 - Setting fstab to mount external hdd"
   cat /etc/fstab.hddmnt >> /etc/fstab
   reboot
 fi 
@@ -34,7 +35,7 @@ case "$1" in
   start)
         # Other mounts are done in fstab
         # These don't work there
-
+        logger "$0 - Bind Mounting /usr and /tmp"
         /bin/mount --bind /mnt/extdrv/usr /usr
         /bin/mount --bind /mnt/extdrv/tmp /tmp
         ;;
