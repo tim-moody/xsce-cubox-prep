@@ -52,10 +52,11 @@ fi
 # umount just in case
 umount /mnt/extdrv
 
-# Make 3 partitions:
+# Make 4 partitions:
 #  - reserverve 250M for boot (not currently used)
 #  - 2 G for swap
-#  - remainder for rootfs
+#  - 40 G for rootfs
+#  - remainder for library
 # Assume drive has no more than 10 existing partitions
 # Delete them
 fdisk /dev/sda <<EOF
@@ -99,6 +100,10 @@ t
 n
 3
 
++40G
+n
+4
+
 
 
 w
@@ -111,7 +116,7 @@ echo "Creating file systems"
 
 mkfs.ext3 /dev/sda1 -L BootReserved
 mkswap /dev/sda2 -L ExtSwap
-# mkfs.ext4 /dev/sda3 -L XSCE-RootOverlay
+mkfs.ext4 /dev/sda4 -L XSCE-Library
 
 # Format and resize partition 3
 # e2fsck -f /dev/sda3
@@ -130,6 +135,9 @@ tune2fs /dev/sda3 -U $UUID
 e2fsck -f /dev/sda3
 resize2fs /dev/sda3
 
+# Format partition 4
+e2fsck -f /dev/sda4
+
 # Create some xsce directories and mount
 
 mount /dev/sda3 /mnt/extdrv
@@ -146,7 +154,9 @@ cp scripts/fstab.hddmnt /mnt/mmc/etc
 cp /mnt/mmc/etc/fstab* /mnt/extdrv/etc
 
 cp scripts/010-xsce-extmnt /mnt/mmc/etc/rc.d/init.d
-cp scripts/010-xsce-extmnt /mnt/extdrv/etc/rc.d/init.d 
+cp scripts/010-xsce-extmnt /mnt/extdrv/etc/rc.d/init.d
+
+# chkconfig 010-xsce-extmnt on
 
 echo "******************************************************"
 echo "Ready to reboot"
